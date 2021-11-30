@@ -16,7 +16,7 @@
 # Usage
 WIP 
 
-## 1. Clone
+## 1. Setup
 
 ## 2. Run Server
 
