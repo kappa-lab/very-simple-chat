@@ -49,14 +49,6 @@ type leaveData struct {
 	LeaveId int   `json:"leaveId"`
 	Member  []int `json:"member"`
 }
-type rawCmd struct {
-	Target  int
-	Message string
-}
-
-func (r *rawCmd) toCommand() command.Command {
-	return command.NewCommand(r.Target, r.Message)
-}
 
 func (c *connectionCtrl) ReadMessage(myRoom Room, conn net.Conn) {
 
@@ -72,20 +64,20 @@ func (c *connectionCtrl) ReadMessage(myRoom Room, conn net.Conn) {
 			myRoom.Broadcast(string(body))
 			break
 		}
-		cmd := rawCmd{}
+		var cmd command.Command
 		json.Unmarshal(body, &cmd)
 
 		fmt.Printf("[ConnCtrl(%d) Read]: %s\n", c.id, body)
 
-		m, _ := json.Marshal(messageData{
+		json, _ := json.Marshal(messageData{
 			Sender:  c.id,
 			Message: cmd.Message,
 		})
 
 		if command.IsBroadcast(cmd.Target) {
-			myRoom.Broadcast(string(m))
+			myRoom.Broadcast(string(json))
 		} else {
-			myRoom.Unicast(cmd.Target, string(m))
+			myRoom.Unicast(cmd.Target, string(json))
 		}
 	}
 }

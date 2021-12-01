@@ -44,10 +44,7 @@ func main() {
 }
 
 func sendGreeting(conn net.Conn) {
-	raw, _ := json.Marshal(rawCmd{
-		Target:  command.BroadcastTarget,
-		Message: "Hello everybody",
-	})
+	raw, _ := json.Marshal(command.NewCommand(command.BroadcastTarget, "Hello everybody"))
 	fmt.Printf("[SendGreeting]: %s\n", raw)
 	protocol.Write(conn, raw)
 }
@@ -63,24 +60,15 @@ func parseInput(conn net.Conn) {
 		 */
 		reader := bufio.NewReader(os.Stdin)
 		dec := json.NewDecoder(reader)
-		var raw rawCmd
+		var cmd command.Command
 
-		if err := dec.Decode(&raw); err != nil {
+		if err := dec.Decode(&cmd); err != nil {
 			fmt.Println("[Invalid Command]:", err)
 			continue
 		}
 
-		cmd, _ := json.Marshal(raw)
-		fmt.Printf("[Input]:%s\n", cmd)
-		protocol.Write(conn, cmd)
+		json, _ := json.Marshal(cmd)
+		fmt.Printf("[Input]:%s\n", json)
+		protocol.Write(conn, json)
 	}
-}
-
-type rawCmd struct {
-	Target  int
-	Message string
-}
-
-func (r *rawCmd) toCommand() command.Command {
-	return command.NewCommand(r.Target, r.Message)
 }

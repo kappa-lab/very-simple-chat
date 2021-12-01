@@ -2,39 +2,26 @@ package command
 
 import "fmt"
 
-type Command interface {
-	Target() int
-	Message() string
+type Command struct {
+	Target  int    `json:"target"`
+	Message string `json:"message"`
 }
 
-func NewCommand(target int, message string) Command {
-	return &command{
-		target:  target,
-		message: message,
+func NewCommand(target int, message string) *Command {
+	return &Command{
+		Target:  target,
+		Message: message,
 	}
 }
 
 const BroadcastTarget = 255
 
-type command struct {
-	target  int
-	message string
+func (c *Command) String() string {
+	return fmt.Sprintf("{target:%d, message:%s}", c.Target, c.Message)
 }
 
-func (c *command) Target() int {
-	return c.target
-}
-
-func (c *command) Message() string {
-	return c.message
-}
-
-func (c *command) String() string {
-	return fmt.Sprintf("{target:%d, message:%s}", c.target, c.message)
-}
-
-func (c *command) IsBroadcast() bool {
-	return IsBroadcast(c.target)
+func (c *Command) IsBroadcast() bool {
+	return IsBroadcast(c.Target)
 }
 
 func IsBroadcast(target int) bool {
