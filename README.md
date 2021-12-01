@@ -1,7 +1,7 @@
 # What is this
 - Simple & Primitive multi client communication system.
    - e.g. chat system
-- for larning   
+- for learning   
 
 # Supported
 - Broadcast message
@@ -45,17 +45,17 @@ go run .
 ```
 
 ## 4. Send Message
-Input command into Client Window
+Input command into Client Window.
 
 ### Broadcast
-- tartget 255 as Broadcast
+tartget:255, send all clients.
 
 ```shell
 {"target":255, "message":"hello evrybody"}
 ```
 
 ### Unicast
-- tartget 255 as Broadcast
+tartget:n(<255), send single clinet.
  
 ```shell
 {"target":1, "message":"hello 1"}
