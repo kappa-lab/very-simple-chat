@@ -8,7 +8,8 @@ import (
 /**
 * Protocol Structure
 * |----Header(1byte)-----|-----Body(max255byte)-----|
-*       BodyLength                  Body
+* |     BodyLength       |          Body            |
+* |______________________|__________________________|
  */
 func Read(conn net.Conn) ([]byte, error) {
 	head := make([]byte, 1)

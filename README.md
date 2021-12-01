@@ -14,7 +14,12 @@
 - Ping/Pong based Alive monitoring 
 
 # Protocol
-WIP
+## Structure
+```
+|----Header(1byte)-----|-----Body(max255byte)-----|
+|     BodyLength       |          Body            |
+|______________________|__________________________|
+```
 
 # Usage
 
