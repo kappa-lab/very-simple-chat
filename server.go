@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+
+	"github.com/kappa-lab/very-simple-chat/protocol"
 )
 
 func startServer() {
@@ -37,7 +39,7 @@ func initConnection(conn net.Conn, r Room) {
 	msg, _ := json.Marshal(greeting)
 	fmt.Printf("[Init Connection] ---> %s\n", msg)
 
-	conn.Write(msg)
+	protocol.Write(conn, msg)
 
 	r.Broadcast(string(msg))
 	r.AddListener(connCtrl.Id(), connCtrl.EventListener())

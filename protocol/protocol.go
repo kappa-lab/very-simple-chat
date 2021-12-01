@@ -1,18 +1,33 @@
 package protocol
 
-type Header struct {
-	Action     int
-	BodyLength int
-}
-
-type Action int
-
-const (
-	Join Action = iota + 1
-	Leave
-	Message
+import (
+	"bytes"
+	"net"
 )
 
-func Read(b []byte) {}
+/**
+* Protocol Structure
+* |----Header(1byte)-----|-----Body(max255byte)-----|
+*       BodyLength                  Body
+ */
+func Read(conn net.Conn) ([]byte, error) {
+	head := make([]byte, 1)
+	_, err := conn.Read(head)
+	if err != nil {
+		return nil, err
+	}
 
-func Write(action int, body string) {}
+	body := make([]byte, head[0])
+	_, err = conn.Read(body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
+}
+
+func Write(conn net.Conn, body []byte) (int, error) {
+	var buf bytes.Buffer
+	buf.WriteByte(byte(len(body)))
+	buf.Write(body)
+	return conn.Write(buf.Bytes())
+}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,10 +10,10 @@ import (
 	"time"
 
 	"github.com/kappa-lab/very-simple-chat/command"
+	"github.com/kappa-lab/very-simple-chat/protocol"
 )
 
 func main() {
-
 	fmt.Println("[Client Start]")
 
 	conn, err := net.Dial("tcp", "localhost:8080")
@@ -34,11 +33,10 @@ func main() {
 
 	go parseInput(conn)
 
-	b := make([]byte, 256)
 	for {
-		size, err := conn.Read(b)
+		body, err := protocol.Read(conn)
 		if err == nil {
-			fmt.Printf("[Receive]: %s\n", b[:size])
+			fmt.Printf("[Receive]: %s\n", body)
 		} else if err == io.EOF {
 			break
 		}
@@ -46,18 +44,12 @@ func main() {
 }
 
 func sendGreeting(conn net.Conn) {
-	msg := "Hello everybody"
-	target := command.BroadcastTarget
-	conn.Write(createSendData(target, msg))
-}
-
-func createSendData(target int, message string) []byte {
-	fmt.Printf("[Send]: target=%d, mesaage=%s\n", target, message)
-	var buf bytes.Buffer
-	msg := []byte(message)
-	buf.WriteByte(byte(target))
-	buf.Write(msg)
-	return buf.Bytes()
+	raw, _ := json.Marshal(rawCmd{
+		Target:  command.BroadcastTarget,
+		Message: "Hello everybody",
+	})
+	fmt.Printf("[SendGreeting]: %s\n", raw)
+	protocol.Write(conn, raw)
 }
 
 func parseInput(conn net.Conn) {
@@ -67,7 +59,7 @@ func parseInput(conn net.Conn) {
 		 * {"target":1, "message":"hello 1"}
 		 *
 		 * broadcast (255 as broadcast)
-		 * {"target":255, "message":"hello evrybody"}
+		 * {"target":255, "message":"hello everybody"}
 		 */
 		reader := bufio.NewReader(os.Stdin)
 		dec := json.NewDecoder(reader)
@@ -77,10 +69,10 @@ func parseInput(conn net.Conn) {
 			fmt.Println("[Invalid Command]:", err)
 			continue
 		}
-		var cmd = raw.toCommand()
 
-		fmt.Printf("[input]:%s\n", cmd)
-		conn.Write(createSendData(cmd.Target(), cmd.Message()))
+		cmd, _ := json.Marshal(raw)
+		fmt.Printf("[Input]:%s\n", cmd)
+		protocol.Write(conn, cmd)
 	}
 }
 

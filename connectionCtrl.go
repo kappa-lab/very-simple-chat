@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/kappa-lab/very-simple-chat/command"
+	"github.com/kappa-lab/very-simple-chat/protocol"
 )
 
 type ConnectionCtrl interface {
@@ -35,7 +36,7 @@ func (c *connectionCtrl) HandleEventListener(conn net.Conn) {
 	for {
 		msg := <-c.eventListener
 		fmt.Printf("[ConnCtrl(%d) Event]: %s\n", c.id, msg)
-		conn.Write([]byte(msg))
+		protocol.Write(conn, []byte(msg))
 	}
 }
 
@@ -48,12 +49,19 @@ type leaveData struct {
 	LeaveId int   `json:"leaveId"`
 	Member  []int `json:"member"`
 }
+type rawCmd struct {
+	Target  int
+	Message string
+}
+
+func (r *rawCmd) toCommand() command.Command {
+	return command.NewCommand(r.Target, r.Message)
+}
 
 func (c *connectionCtrl) ReadMessage(myRoom Room, conn net.Conn) {
-	b := make([]byte, 256)
 
 	for {
-		size, err := conn.Read(b)
+		body, err := protocol.Read(conn)
 		if err == io.EOF {
 			fmt.Printf("[ConnCtrl(%d) Leave]\n", c.id)
 			myRoom.RemoveListener(c.id)
@@ -63,21 +71,21 @@ func (c *connectionCtrl) ReadMessage(myRoom Room, conn net.Conn) {
 			})
 			myRoom.Broadcast(string(body))
 			break
-		} else if size > 0 {
-			target := int(b[0]) // head 1byte is target
-			msg := b[1:size]
-			fmt.Printf("[ConnCtrl(%d) Read]: target=%d, message=%s\n", c.id, target, msg)
+		}
+		cmd := rawCmd{}
+		json.Unmarshal(body, &cmd)
 
-			body, _ := json.Marshal(messageData{
-				Sender:  c.id,
-				Message: string(msg),
-			})
+		fmt.Printf("[ConnCtrl(%d) Read]: %s\n", c.id, body)
 
-			if command.IsBroadcast(target) {
-				myRoom.Broadcast(string(body))
-			} else {
-				myRoom.Unicast(target, string(body))
-			}
+		m, _ := json.Marshal(messageData{
+			Sender:  c.id,
+			Message: cmd.Message,
+		})
+
+		if command.IsBroadcast(cmd.Target) {
+			myRoom.Broadcast(string(m))
+		} else {
+			myRoom.Unicast(cmd.Target, string(m))
 		}
 	}
 }
